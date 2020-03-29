@@ -1,4 +1,4 @@
-module github.com/rubaxa/draft
+module github.com/gothing/draft
 
 go 1.14
 

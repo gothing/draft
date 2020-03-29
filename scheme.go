@@ -3,7 +3,7 @@ package draft
 import (
 	"sync"
 
-	"github.com/rubaxa/draft/reflect"
+	"github.com/gothing/draft/reflect"
 )
 
 // Scheme — описательная часть api и сбосов его использования

@@ -2,7 +2,8 @@ package gen
 
 import (
 	"math/rand"
-	"github.com/rubaxa/draft/types"
+	
+	"github.com/gothing/draft/types"
 )
 
 func ID() types.ID {

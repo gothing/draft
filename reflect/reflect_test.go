@@ -3,7 +3,7 @@ package reflect_test
 import (
 	"testing"
 
-	"github.com/rubaxa/draft/reflect"
+	"github.com/gothing/draft/reflect"
 	"github.com/stretchr/testify/assert"
 )
 

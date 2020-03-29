@@ -3,8 +3,8 @@ package draft_test
 import (
 	"testing"
 
-	"github.com/rubaxa/draft"
-	"github.com/rubaxa/draft/types"
+	"github.com/gothing/draft"
+	"github.com/gothing/draft/types"
 	"github.com/stretchr/testify/assert"
 )
 
