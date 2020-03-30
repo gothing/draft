@@ -22,13 +22,13 @@ type Scheme struct {
 
 // SchemeCase — описание и пример использование
 type SchemeCase struct {
-	name   string
-	descr  string
-	access AccessType
-	status StatusType
-	method string
-	params interface{}
-	body   interface{}
+	Name        string
+	Description string
+	Access      AccessType
+	Status      StatusType
+	Method      string
+	Params      interface{}
+	Body        interface{}
 }
 
 // Name —
@@ -39,7 +39,7 @@ func (s *Scheme) Name(v string) {
 // Access — выставить права доступа к апишке или `case`
 func (s *Scheme) Access(v AccessType) {
 	if s.activeCase != nil {
-		s.activeCase.access = v
+		s.activeCase.Access = v
 	} else {
 		s.defAccess = v
 	}
@@ -48,7 +48,7 @@ func (s *Scheme) Access(v AccessType) {
 // Method — выставить метод к апишке или `case`
 func (s *Scheme) Method(v string) {
 	if s.activeCase != nil {
-		s.activeCase.method = v
+		s.activeCase.Method = v
 	} else {
 		s.defMethod = v
 	}
@@ -57,7 +57,7 @@ func (s *Scheme) Method(v string) {
 // Description — выставить описание к апишке или `case`
 func (s *Scheme) Description(v string) {
 	if s.activeCase != nil {
-		s.activeCase.descr = v
+		s.activeCase.Description = v
 	} else {
 		s.descr = v
 	}
@@ -66,7 +66,7 @@ func (s *Scheme) Description(v string) {
 // Params — выставить параметры к апишке или `case`
 func (s *Scheme) Params(v interface{}) {
 	if s.activeCase != nil {
-		s.activeCase.params = v
+		s.activeCase.Params = v
 	} else {
 		s.defParams = v
 	}
@@ -75,7 +75,7 @@ func (s *Scheme) Params(v interface{}) {
 // Body — выставить ответ к апишке или `case`
 func (s *Scheme) Body(v interface{}) {
 	if s.activeCase != nil {
-		s.activeCase.body = v
+		s.activeCase.Body = v
 	} else {
 		s.defBody = v
 	}
@@ -87,11 +87,11 @@ func (s *Scheme) Case(status StatusType, name string, fn func()) {
 	defer s.mu.Unlock()
 
 	s.activeCase = &SchemeCase{
-		status: status,
-		name:   name,
-		access: s.defAccess,
-		params: s.defParams,
-		body:   s.defBody,
+		Status: status,
+		Name:   name,
+		Access: s.defAccess,
+		Params: s.defParams,
+		Body:   s.defBody,
 	}
 	s.cases = append(s.cases, s.activeCase)
 	fn()
@@ -126,7 +126,7 @@ type JSONSchemeResponse struct {
 // GetCaseByStatus — определить описание и пример использования
 func (s *Scheme) GetCaseByStatus(v StatusType) *SchemeCase {
 	for _, c := range s.cases {
-		if c.status == v {
+		if c.Status == v {
 			return c
 		}
 	}
@@ -143,7 +143,7 @@ func (s *Scheme) ToJSON() JSONScheme {
 	}
 
 	for _, c := range s.cases {
-		d, exists := json.Detail[c.status]
+		d, exists := json.Detail[c.Status]
 		if !exists {
 			d = &JSONSchemeDetail{
 				Request: &JSONSchemeRequest{
@@ -154,12 +154,12 @@ func (s *Scheme) ToJSON() JSONScheme {
 					Body: make(map[string]reflect.Item),
 				},
 			}
-			json.Detail[c.status] = d
+			json.Detail[c.Status] = d
 		}
 
-		d.Access = c.access
-		setReflectObjectMap(d.Request.Params, c.params)
-		setReflectObjectMap(d.Response.Body, c.body)
+		d.Access = c.Access
+		setReflectObjectMap(d.Request.Params, c.Params)
+		setReflectObjectMap(d.Response.Body, c.Body)
 	}
 
 	return json

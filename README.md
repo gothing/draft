@@ -1,21 +1,33 @@
+draft
+-----
 
 
+#### Usage
 
 ```go
+type API struct {
+	User *UserEndpoint
+}
 
+type UserEndpoint struct {
+	draft.Endpoint
+}
 
+func (ue *UserEndpoint) Init() *Endpoint {
+	ue.Endpoint.Init(ue)
+	return ue
+}
 
-func (api) Handle(ctx, params) {
-	mock, err := api.InitEndpoint(req)
-	if err != nil {
-		return
+func (ue *UserEndpoint) InitEndpointScheme(s *draft.Scheme) {
+	s.Description("...")
+	s.Case(draft.Status.OK, "User object by ID", func () {
+		// ...
+	})
+}
+
+func InitAPI() *API {
+	return &API{
+		User: new(UserEndpoint).Init(),
 	}
-
-	if mock != nil {
-		return mock.Body.(*APIResponse), nil
-	}
-
-
-	return apidoc.Mock(api, req)
 }
 ```
