@@ -38,12 +38,14 @@ func TestNil(t *testing.T) {
 	v := reflect.Get(nil, reflect.Options{})
 	assert.Equal(t, v.Type, "nil")
 	assert.Equal(t, v.Type, v.MetaType)
+	assert.Equal(t, v.Value, nil)
 }
 
 func TestString(t *testing.T) {
 	v := reflect.Get("foo", reflect.Options{})
 	assert.Equal(t, "string", v.Type)
 	assert.Equal(t, v.Type, v.MetaType)
+	assert.Equal(t, v.Value, "foo")
 }
 
 func TestTyped(t *testing.T) {
@@ -75,4 +77,29 @@ func TestStruct(t *testing.T) {
 	// Detail
 	assert.Equal(t, "User detail object", v.Nested[3].Comment)
 	assert.Equal(t, []string{"Active", "IsAdmin"}, v.Nested[2].Keys())
+}
+
+func TestRef(t *testing.T) {
+	x := &UserObject{ID: 123}
+
+	v := reflect.Get(x, reflect.Options{})
+	assert.Equal(t, "struct", v.Type, "ref")
+
+	(func(v interface{}) {
+		ref := reflect.Get(x, reflect.Options{})
+		assert.Equal(t, "struct", ref.Type, "interface")
+	})(x)
+}
+
+func TestInterface(t *testing.T) {
+	var x interface{} = nil
+
+	x = &UserObject{ID: 123}
+	v := reflect.Get(x, reflect.Options{})
+	assert.Equal(t, "struct", v.Type, "ref")
+
+	(func(v interface{}) {
+		ref := reflect.Get(x, reflect.Options{})
+		assert.Equal(t, "struct", ref.Type, "interface")
+	})(x)
 }

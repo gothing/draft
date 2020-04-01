@@ -14,7 +14,7 @@ type Scheme struct {
 	descr      string
 	cases      []*SchemeCase
 	defAccess  AccessType
-	defMethod  string
+	defMethod  MethodType
 	defParams  interface{}
 	defBody    interface{}
 	activeCase *SchemeCase
@@ -26,7 +26,7 @@ type SchemeCase struct {
 	Description string
 	Access      AccessType
 	Status      StatusType
-	Method      string
+	Method      MethodType
 	Params      interface{}
 	Body        interface{}
 }
@@ -46,7 +46,7 @@ func (s *Scheme) Access(v AccessType) {
 }
 
 // Method — выставить метод к апишке или `case`
-func (s *Scheme) Method(v string) {
+func (s *Scheme) Method(v MethodType) {
 	if s.activeCase != nil {
 		s.activeCase.Method = v
 	} else {
@@ -123,7 +123,12 @@ type JSONSchemeResponse struct {
 	Body map[string]reflect.Item `json:"body"`
 }
 
-// GetCaseByStatus — определить описание и пример использования
+// Cases —
+func (s *Scheme) Cases() []*SchemeCase {
+	return s.cases
+}
+
+// GetCaseByStatus —
 func (s *Scheme) GetCaseByStatus(v StatusType) *SchemeCase {
 	for _, c := range s.cases {
 		if c.Status == v {

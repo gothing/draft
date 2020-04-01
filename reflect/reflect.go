@@ -2,6 +2,8 @@ package reflect
 
 import (
 	"reflect"
+	"strings"
+
 	"github.com/iancoleman/strcase"
 )
 
@@ -12,12 +14,14 @@ type Options struct {
 
 // Item -
 type Item struct {
-	Name     string `json:"name"`
-	Type     string `json:"type"`
-	MetaType string `json:"meta_type"`
-	Tags     string `json:"tags"`
-	Comment  string `json:"comment"`
-	Nested   []Item `json:"nested"`
+	Name     string      `json:"name"`
+	Value    interface{} `json:"-"`
+	Type     string      `json:"type"`
+	MetaType string      `json:"meta_type"`
+	Tags     string      `json:"tags"`
+	Comment  string      `json:"comment"`
+	Required bool        `json:"required"`
+	Nested   []Item      `json:"nested"`
 }
 
 // Get -
@@ -40,8 +44,27 @@ func initItem(
 	typeRef reflect.Type,
 	valRef reflect.Value,
 ) {
+	if reflect.Interface == typeRef.Kind() {
+		valRef = valRef.Elem()
+		typeRef = valRef.Type()
+	}
+
+	if item.Name == "" {
+		if reflect.Ptr == typeRef.Kind() {
+			typeRef = typeRef.Elem()
+		}
+
+		if valRef.Kind() == reflect.Ptr {
+			valRef = valRef.Elem()
+		}
+	}
+
 	item.Type = typeRef.Kind().String()
 	item.MetaType = typeRef.Name()
+
+	if valRef.IsValid() {
+		item.Value = valRef.Interface()
+	}
 
 	switch typeRef.Kind() {
 	case reflect.Struct:
@@ -51,18 +74,25 @@ func initItem(
 			item := &nested[i]
 			f := typeRef.Field(i)
 			fv := valRef.FieldByName(f.Name)
-			td := fv.MethodByName("TypeDescription")
 
-			item.Name = f.Name
 			if o.SnakeCase {
-				item.Name = strcase.ToSnake(item.Name)
+				item.Name = strcase.ToSnake(f.Name)
+			} else {
+				item.Name = f.Name
 			}
 
 			item.Tags = string(f.Tag)
 			item.Comment = f.Tag.Get("comment")
+			item.Required = f.Tag.Get("required") == "true"
 
+			td := fv.MethodByName("TypeDescription")
 			if td.IsValid() {
-				item.Comment = td.Call([]reflect.Value{})[0].String()
+				c := td.Call([]reflect.Value{})[0].String()
+				if item.Comment == "" {
+					item.Comment = c
+				} else {
+					item.Comment = strings.Replace(item.Comment, "{super}", c, -1)
+				}
 			}
 
 			initItem(o, item, f.Type, fv)

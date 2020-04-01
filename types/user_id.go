@@ -1,9 +1,11 @@
 package types
 
-// UserID — ID
+import "math/rand"
+
+// UserID — User ID
 type UserID uint64
 
-// TypeDescription —  
+// TypeDescription —
 func (v UserID) TypeDescription() string {
 	return "User ID"
 }
@@ -11,4 +13,9 @@ func (v UserID) TypeDescription() string {
 // TypeValidity -
 func (v UserID) TypeValidity() TypeValidity {
 	return TypeValidity{OK: v > 0}
+}
+
+// GenUserID -
+func GenUserID() UserID {
+	return UserID(rand.Intn(100000) + 1)
 }
