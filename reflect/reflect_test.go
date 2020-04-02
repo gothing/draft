@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/gothing/draft/reflect"
+	"github.com/gothing/draft/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -27,18 +28,33 @@ type UserFlags struct {
 }
 
 type UserDetail struct {
-	Name string
+	Name  string
+	Login string
+	Token types.AGToken `comment:"Некий токен ({super})"`
 }
 
-func (v *UserDetail) TypeDescription() string {
+func (v UserFlags) TypeDescription() string {
+	return "User flags"
+}
+
+func (v UserDetail) TypeDescription() string {
 	return "User detail object"
 }
 
 func TestNil(t *testing.T) {
 	v := reflect.Get(nil, reflect.Options{})
-	assert.Equal(t, v.Type, "nil")
+	assert.Equal(t, "nil", v.Type)
 	assert.Equal(t, v.Type, v.MetaType)
 	assert.Equal(t, v.Value, nil)
+}
+
+func TestRefNil(t *testing.T) {
+	var x *UserDetail
+	v := reflect.Get(x, reflect.Options{})
+	assert.Equal(t, "struct", v.Type)
+	assert.Equal(t, "UserDetail", v.MetaType)
+	assert.Equal(t, []string{"Name", "Login", "Token"}, v.Keys())
+	assert.Equal(t, "Некий токен (Autogen-токен)", v.Nested[2].Comment)
 }
 
 func TestString(t *testing.T) {
@@ -55,14 +71,16 @@ func TestTyped(t *testing.T) {
 }
 
 func TestStruct(t *testing.T) {
-	v := reflect.Get(UserObject{ID: 123}, reflect.Options{})
+	v := reflect.Get(UserObject{ID: 123}, reflect.Options{
+		SnakeCase: true,
+	})
 
 	assert.Equal(t, "struct", v.Type)
 	assert.Equal(t, "UserObject", v.MetaType)
-	assert.Equal(t, []string{"ID", "Exists", "Flags", "Detail"}, v.Keys())
+	assert.Equal(t, []string{"id", "exists", "flags", "detail"}, v.Keys())
 
 	// ID
-	assert.Equal(t, "ID", v.Nested[0].Name)
+	assert.Equal(t, "id", v.Nested[0].Name)
 	assert.Equal(t, "Uniq user ID", v.Nested[0].Comment)
 	assert.Equal(t, "uint64", v.Nested[0].Type)
 	assert.Equal(t, "UserID", v.Nested[0].MetaType)
@@ -72,11 +90,12 @@ func TestStruct(t *testing.T) {
 
 	// Flags
 	assert.Equal(t, 2, len(v.Nested[2].Nested))
-	assert.Equal(t, []string{"Active", "IsAdmin"}, v.Nested[2].Keys())
+	assert.Equal(t, "User flags", v.Nested[2].Comment)
+	assert.Equal(t, []string{"active", "is_admin"}, v.Nested[2].Keys())
 
 	// Detail
 	assert.Equal(t, "User detail object", v.Nested[3].Comment)
-	assert.Equal(t, []string{"Active", "IsAdmin"}, v.Nested[2].Keys())
+	assert.Equal(t, []string{"name", "login", "token"}, v.Nested[3].Keys())
 }
 
 func TestRef(t *testing.T) {

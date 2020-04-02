@@ -8,10 +8,12 @@ var Access = struct {
 	All          AccessType
 	Auth         AccessType
 	AuthOptional AccessType
-	SWASign      AccessType
+	Cookie       AccessType
+	Signature    AccessType
 }{
 	"all",
 	"auth",
 	"auth:optional",
-	"swa:sign",
+	"cookie",
+	"signature",
 }

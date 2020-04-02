@@ -24,12 +24,8 @@ type UserFlags struct {
 	Deleted bool
 }
 
-func (ue *UserEndpoint) Init() *UserEndpoint {
-	ue.Endpoint.Init(ue)
-	return ue
-}
-
 func (ue *UserEndpoint) InitEndpointScheme(s *draft.Scheme) {
+	s.URL("/api/v1/user")
 	s.Case(draft.Status.OK, "Wow!", func() {
 		s.Body(UserEndpointBody{
 			ID: 20976,
@@ -38,13 +34,15 @@ func (ue *UserEndpoint) InitEndpointScheme(s *draft.Scheme) {
 }
 
 func TestEndpoint(t *testing.T) {
-	r := httptest.NewRequest("GET", "http://gothing/draft/user", nil)
+	ue := &UserEndpoint{}
+	api := draft.Compose(ue)
+
+	r := httptest.NewRequest("GET", "http://gothing/api/v1/user", nil)
 	w := httptest.NewRecorder()
 
-	ue := new(UserEndpoint).Init()
 	assert.Equal(t, ue.GetScheme().GetCaseByStatus(draft.Status.OK).Name, "Wow!")
 
-	ue.ServeHTTP(w, r)
+	api.ServeHTTP(w, r)
 	resp := w.Result()
 	body, _ := ioutil.ReadAll(resp.Body)
 

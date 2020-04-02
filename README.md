@@ -7,10 +7,6 @@ draft
 #### Setup API Endpoint
 
 ```go
-type API struct {
-	User *UserEndpoint
-}
-
 type UserEndpoint struct {
 	draft.Endpoint
 }
@@ -23,12 +19,8 @@ type UserEndpointBody struct {
 	ID types.UserID
 }
 
-func (ue *UserEndpoint) Init() *Endpoint {
-	ue.Endpoint.Init(ue)
-	return ue
-}
-
 func (ue *UserEndpoint) InitEndpointScheme(s *draft.Scheme) {
+	s.URL("/api/v1/user")
 	s.Description("...")
 	s.Case(draft.Status.OK, "User object by ID", func () {
 		id := types.GenUserID()
@@ -44,19 +36,16 @@ func (ue *UserEndpoint) InitEndpointScheme(s *draft.Scheme) {
 		})
 	})
 }
-
-func InitAPI() *API {
-	return &API{
-		User: new(UserEndpoint).Init(),
-	}
-}
 ```
 
 #### Add http handle
 
 ```go
 func main() {
-	api := InitAPI()
-	http.Handle("/user", api.User)
+	http.ListenAndServe(srv, draft.Compose(
+		new(UserEndpoint),
+	))
 }
 ```
+
+---

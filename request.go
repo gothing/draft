@@ -3,8 +3,6 @@ package draft
 import (
 	"net/http"
 	"net/url"
-
-	"github.com/gothing/draft/reflect"
 )
 
 // Request -
@@ -62,18 +60,4 @@ func (p *RequestParams) Get(key string) string {
 	}
 
 	return p.query.Get(key)
-}
-
-// GetMissed -
-func (p *RequestParams) GetMissed(v interface{}) []string {
-	ref := reflect.Get(v, reflect.Options{SnakeCase: true})
-	missed := make([]string, 0, len(ref.Nested))
-
-	for _, item := range ref.Nested {
-		if !p.Has(item.Name) {
-			missed = append(missed, item.Name)
-		}
-	}
-
-	return missed
 }

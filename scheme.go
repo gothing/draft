@@ -12,6 +12,7 @@ type Scheme struct {
 	url        string
 	name       string
 	descr      string
+	project    string
 	cases      []*SchemeCase
 	defAccess  AccessType
 	defMethod  MethodType
@@ -22,18 +23,28 @@ type Scheme struct {
 
 // SchemeCase — описание и пример использование
 type SchemeCase struct {
-	Name        string
-	Description string
-	Access      AccessType
-	Status      StatusType
-	Method      MethodType
-	Params      interface{}
-	Body        interface{}
+	Name        string      `json:"name"`
+	Description string      `json:"description"`
+	Access      AccessType  `json:"access"`
+	Status      StatusType  `json:"status"`
+	Method      MethodType  `json:"method"`
+	Params      interface{} `json:"params"`
+	Body        interface{} `json:"body"`
+}
+
+// URL —
+func (s *Scheme) URL(v string) {
+	s.url = v
 }
 
 // Name —
 func (s *Scheme) Name(v string) {
 	s.name = v
+}
+
+// Access — выставить права доступа к апишке или `case`
+func (s *Scheme) Project(v string) {
+	s.project = v
 }
 
 // Access — выставить права доступа к апишке или `case`
@@ -89,6 +100,7 @@ func (s *Scheme) Case(status StatusType, name string, fn func()) {
 	s.activeCase = &SchemeCase{
 		Status: status,
 		Name:   name,
+		Method: s.defMethod,
 		Access: s.defAccess,
 		Params: s.defParams,
 		Body:   s.defBody,
@@ -101,9 +113,10 @@ func (s *Scheme) Case(status StatusType, name string, fn func()) {
 // JSONScheme —
 type JSONScheme struct {
 	Name        string                           `json:"name"`
+	Project     string                           `json:"project"`
 	Description string                           `json:"description"`
 	Detail      map[StatusType]*JSONSchemeDetail `json:"detail"`
-	Cases       []*SchemeCase
+	Cases       []*SchemeCase                    `json:"cases"`
 }
 
 // JSONSchemeDetail —
@@ -115,6 +128,7 @@ type JSONSchemeDetail struct {
 
 // JSONSchemeRequest -
 type JSONSchemeRequest struct {
+	Method MethodType              `json:"method"`
 	Params map[string]reflect.Item `json:"params"`
 }
 
@@ -142,16 +156,18 @@ func (s *Scheme) GetCaseByStatus(v StatusType) *SchemeCase {
 func (s *Scheme) ToJSON() JSONScheme {
 	json := JSONScheme{
 		Name:        s.name,
+		Project:     s.project,
 		Description: s.descr,
 		Detail:      make(map[StatusType]*JSONSchemeDetail),
-		Cases:       s.cases,
+		Cases:       make([]*SchemeCase, len(s.cases)),
 	}
 
-	for _, c := range s.cases {
+	for i, c := range s.cases {
 		d, exists := json.Detail[c.Status]
 		if !exists {
 			d = &JSONSchemeDetail{
 				Request: &JSONSchemeRequest{
+					Method: c.Method,
 					Params: make(map[string]reflect.Item),
 				},
 
@@ -159,18 +175,24 @@ func (s *Scheme) ToJSON() JSONScheme {
 					Body: make(map[string]reflect.Item),
 				},
 			}
+
 			json.Detail[c.Status] = d
 		}
 
 		d.Access = c.Access
-		setReflectObjectMap(d.Request.Params, c.Params)
-		setReflectObjectMap(d.Response.Body, c.Body)
+
+		nc := &SchemeCase{}
+		*nc = *c
+		nc.Params = setReflectObjectMap(d.Request.Params, c.Params)
+		nc.Body = setReflectObjectMap(d.Response.Body, c.Body)
+
+		json.Cases[i] = nc
 	}
 
 	return json
 }
 
-func setReflectObjectMap(obj map[string]reflect.Item, v interface{}) {
+func setReflectObjectMap(obj map[string]reflect.Item, v interface{}) interface{} {
 	if v != nil {
 		ref := reflect.Get(v, reflect.Options{
 			SnakeCase: true,
@@ -178,5 +200,9 @@ func setReflectObjectMap(obj map[string]reflect.Item, v interface{}) {
 		for _, item := range ref.Nested {
 			obj[item.Name] = item
 		}
+
+		return prepareMock(ref)
 	}
+
+	return nil
 }

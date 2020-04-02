@@ -1,9 +1,5 @@
 package types
 
-import (
-	"strings"
-)
-
 // Email — email юзера
 type Email string
 
@@ -12,14 +8,22 @@ func (v Email) TypeDescription() string {
 	return "Email пользователя"
 }
 
-// TypeValidity -
-func (v Email) TypeValidity() TypeValidity {
-	return TypeValidity{OK: strings.Contains(string(v), "@")}
+// XEmail —
+type XEmail string
+
+// TypeDescription —
+func (v XEmail) TypeDescription() string {
+	return "Email пользователя, указывает какую из учетных записей из мульти сессии использовать"
 }
 
 // GenEmail -
 func GenEmail() Email {
 	return "fast.test@list.ru"
+}
+
+// GenXEmail -
+func GenXEmail() Email {
+	return GenEmail()
 }
 
 // GenCorpEmail -

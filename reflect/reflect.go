@@ -16,6 +16,7 @@ type Options struct {
 type Item struct {
 	Name     string      `json:"name"`
 	Value    interface{} `json:"-"`
+	Enum     interface{} `json:"enum"`
 	Type     string      `json:"type"`
 	MetaType string      `json:"meta_type"`
 	Tags     string      `json:"tags"`
@@ -44,26 +45,39 @@ func initItem(
 	typeRef reflect.Type,
 	valRef reflect.Value,
 ) {
-	if reflect.Interface == typeRef.Kind() {
+	isNilVal := false
+
+	// fmt.Println("-----", item.Name, "-----")
+	// fmt.Println("1)", item, "->", typeRef.Kind(), "=", valRef.Kind(), "->", typeRef, "->", valRef)
+	if typeRef.Kind() == reflect.Interface {
 		valRef = valRef.Elem()
 		typeRef = valRef.Type()
 	}
 
-	if item.Name == "" {
-		if reflect.Ptr == typeRef.Kind() {
-			typeRef = typeRef.Elem()
-		}
+	// fmt.Println("2)", item, "->", typeRef.Kind(), "=", valRef.Kind(), "->", typeRef, "->", valRef)
+	if typeRef.Kind() == reflect.Ptr {
+		typeRef = typeRef.Elem()
+	}
 
-		if valRef.Kind() == reflect.Ptr {
-			valRef = valRef.Elem()
+	// fmt.Println("3)", item, "->", typeRef.Kind(), "=", valRef.Kind(), "->", typeRef, "->", valRef)
+	if valRef.Kind() == reflect.Ptr {
+		valRef = valRef.Elem()
+		if !valRef.IsValid() {
+			isNilVal = true
+			valRef = reflect.Zero(typeRef)
 		}
 	}
 
+	// fmt.Println("4)", item, "->", typeRef.Kind(), "=", valRef.Kind(), "->", typeRef, "->", valRef)
 	item.Type = typeRef.Kind().String()
 	item.MetaType = typeRef.Name()
 
 	if valRef.IsValid() {
-		item.Value = valRef.Interface()
+		if isNilVal {
+			item.Value = nil
+		} else {
+			item.Value = valRef.Interface()
+		}
 	}
 
 	switch typeRef.Kind() {
@@ -73,7 +87,6 @@ func initItem(
 		for i := 0; i < typeRef.NumField(); i++ {
 			item := &nested[i]
 			f := typeRef.Field(i)
-			fv := valRef.FieldByName(f.Name)
 
 			if o.SnakeCase {
 				item.Name = strcase.ToSnake(f.Name)
@@ -81,18 +94,30 @@ func initItem(
 				item.Name = f.Name
 			}
 
+			// fmt.Println(" -", item.Name)
+			fv := valRef.FieldByName(f.Name)
+			zfv := fv
+			if f.Type.Kind() == reflect.Ptr {
+				zfv = reflect.Zero(f.Type.Elem())
+			}
+
 			item.Tags = string(f.Tag)
 			item.Comment = f.Tag.Get("comment")
 			item.Required = f.Tag.Get("required") == "true"
 
-			td := fv.MethodByName("TypeDescription")
+			td := zfv.MethodByName("TypeDescription")
 			if td.IsValid() {
 				c := td.Call([]reflect.Value{})[0].String()
 				if item.Comment == "" {
 					item.Comment = c
 				} else {
-					item.Comment = strings.Replace(item.Comment, "{super}", c, -1)
+					item.Comment = strings.ReplaceAll(item.Comment, "{super}", c)
 				}
+			}
+
+			tev := zfv.MethodByName("TypeEnumValues")
+			if tev.IsValid() {
+				item.Enum = tev.Call([]reflect.Value{})[0].Interface()
 			}
 
 			initItem(o, item, f.Type, fv)
