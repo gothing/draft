@@ -53,3 +53,14 @@ func (api *APIService) URLs() []string {
 	}
 	return list
 }
+
+// Handle -
+func (api *APIService) Handle(pattern string, handler http.Handler) {
+	if handler == nil {
+		http.Handle(pattern, api)
+	} else {
+		http.Handle(pattern, handler)
+	}
+	http.Handle("/godraft"+pattern, api)
+	http.Handle("/godraft:scheme"+pattern, api)
+}

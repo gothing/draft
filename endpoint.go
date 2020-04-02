@@ -79,7 +79,7 @@ func (e Endpoint) GetEndpointMock(r *Request) interface{} {
 				missed = m
 			}
 
-			if w > weight {
+			if len(m) == 0 && w > weight {
 				idx = i
 				weight = w
 			}
