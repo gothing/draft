@@ -29,6 +29,11 @@ func Compose(endpoints ...endpoint) *APIService {
 // ServeHTTP -
 func (api *APIService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
+	if strings.Contains(path, "/godraft:doc") {
+		RenderDOC(api, w, r)
+		return
+	}
+
 	path = strings.Replace(path, "/godraft/", "/", 1)
 	path = strings.Replace(path, "/godraft:scheme/", "/", 1)
 
@@ -61,6 +66,7 @@ func (api *APIService) Handle(pattern string, handler http.Handler) {
 	} else {
 		http.Handle(pattern, handler)
 	}
+
 	http.Handle("/godraft"+pattern, api)
 	http.Handle("/godraft:scheme"+pattern, api)
 }
