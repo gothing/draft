@@ -144,22 +144,24 @@ func renderDocRequest(r *JSONSchemeRequest, c *SchemeCase) string {
 		padding: 15px 20px 5px;
 		background: #F0F0F0;
 	">`}
-	p := c.Params.(*orderedmap.OrderedMap)
 
-	for _, k := range p.Keys() {
-		raw, _ := p.Get(k)
-		v := r.Params[k]
-		if isDefaultDocValue(v, raw) {
-			continue
+	p, ok := c.Params.(*orderedmap.OrderedMap)
+	if ok {
+		for _, k := range p.Keys() {
+			raw, _ := p.Get(k)
+			v := r.Params[k]
+			if isDefaultDocValue(v, raw) {
+				continue
+			}
+
+			str = append(str, fmt.Sprintf(
+				`<div style="margin-bottom: 10px">%s<br/>
+				<b>%s</b> = %v</div>`,
+				renderDocComment(v),
+				v.Name,
+				renderJSONValue(v, raw),
+			))
 		}
-
-		str = append(str, fmt.Sprintf(
-			`<div style="margin-bottom: 10px">%s<br/>
-			<b>%s</b> = %v</div>`,
-			renderDocComment(v),
-			v.Name,
-			renderJSONValue(v, raw),
-		))
 	}
 
 	str = append(str, "</div>")
@@ -184,9 +186,12 @@ func renderDocJSON(d map[string]reflect.Item, raw interface{}) string {
 		return ""
 	}
 
-	str := []string{`{<br/>`}
+	json, ok := raw.(*orderedmap.OrderedMap)
+	if !ok {
+		return fmt.Sprintf(`<span style="color: #008079">"%v"</span>`, raw)
+	}
 
-	json := raw.(*orderedmap.OrderedMap)
+	str := []string{`{<br/>`}
 	keys := json.Keys()
 
 	for i, key := range keys {
