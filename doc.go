@@ -1,6 +1,7 @@
 package draft
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"regexp"
@@ -173,9 +174,11 @@ func renderDocResponse(r *JSONSchemeResponse, c *SchemeCase) string {
 		`<div style="
 			margin: 0 -15px;
 			padding: 15px 20px 5px;
-		">`,
+		">{<div style="padding-left: 10px">
+		"status": ` + fmt.Sprintf(`<span style="color: #008079">"%v"</span>`, c.Status) + `,<br/>
+		"body": `,
 		renderDocJSON(r.Body, c.Body),
-		`</div>`,
+		`</div>}</div>`,
 	}
 
 	return strings.Join(str, "\n")
@@ -236,6 +239,10 @@ func renderJSONValue(prop reflect.Item, raw interface{}) string {
 	case "bool":
 		return fmt.Sprintf(`<span style="color: #FF2D54">%v</span>`, raw)
 
+	case "slice":
+		b, _ := json.Marshal(raw)
+		return fmt.Sprintf(`%s`, b)
+
 	case "struct":
 		d := make(map[string]reflect.Item)
 		for _, p := range prop.Nested {
@@ -267,6 +274,15 @@ func rednerDocDescr(v string) string {
 
 func renderDocComment(prop reflect.Item) string {
 	t := prop.Type
+
+	if t == "slice" {
+		t = "[]"
+		if prop.Enum != nil {
+			t += fmt.Sprintf("Enum< %s >", prop.Name)
+		} else {
+			t += prop.MetaType
+		}
+	}
 
 	return fmt.Sprintf(
 		`<span style="color: #999">/\* %s. <b>%s</b> \*/</span>`,

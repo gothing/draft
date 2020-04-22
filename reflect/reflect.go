@@ -81,6 +81,13 @@ func initItem(
 	}
 
 	switch typeRef.Kind() {
+	case reflect.Slice:
+		item.MetaType = typeRef.Elem().Name()
+		tev := reflect.Zero(typeRef.Elem()).MethodByName("TypeEnumValues")
+		if tev.IsValid() {
+			item.Enum = tev.Call([]reflect.Value{})[0].Interface()
+		}
+
 	case reflect.Struct:
 		nested := make([]Item, typeRef.NumField())
 

@@ -41,6 +41,12 @@ func (v UserDetail) TypeDescription() string {
 	return "User detail object"
 }
 
+type BoolEnum string
+
+func (v BoolEnum) TypeEnumValues() []BoolEnum {
+	return []BoolEnum{"yes", "no"}
+}
+
 func TestNil(t *testing.T) {
 	v := reflect.Get(nil, reflect.Options{})
 	assert.Equal(t, "nil", v.Type)
@@ -68,6 +74,26 @@ func TestTyped(t *testing.T) {
 	v := reflect.Get(MyStringType("foo"), reflect.Options{})
 	assert.Equal(t, "string", v.Type)
 	assert.Equal(t, "MyStringType", v.MetaType)
+}
+
+func TestSliceNil(t *testing.T) {
+	var x []int = nil
+	v := reflect.Get(x, reflect.Options{})
+	assert.Equal(t, "slice", v.Type)
+	assert.Equal(t, "int", v.MetaType)
+}
+
+func TestSliceString(t *testing.T) {
+	v := reflect.Get([]string{"foo"}, reflect.Options{})
+	assert.Equal(t, "slice", v.Type)
+	assert.Equal(t, "string", v.MetaType)
+}
+
+func TestSliceEnum(t *testing.T) {
+	v := reflect.Get([]BoolEnum{}, reflect.Options{})
+	assert.Equal(t, "slice", v.Type)
+	assert.Equal(t, "BoolEnum", v.MetaType)
+	assert.Equal(t, []BoolEnum{"yes", "no"}, v.Enum)
 }
 
 func TestStruct(t *testing.T) {
