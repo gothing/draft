@@ -148,3 +148,17 @@ func TestInterface(t *testing.T) {
 		assert.Equal(t, "struct", ref.Type, "interface")
 	})(x)
 }
+
+func TestNilInterface(t *testing.T) {
+	var x interface{} = nil
+
+	v := reflect.Get(x, reflect.Options{})
+	assert.Equal(t, "nil", v.Type, "type")
+}
+
+func TestAnonRefStruct(t *testing.T) {
+	v := reflect.Get(new(struct {
+		Foo string `comment:"Foo-field"`
+	}), reflect.Options{})
+	assert.Equal(t, "struct", v.Type, "type")
+}
