@@ -23,28 +23,7 @@ type apiGroupEntry struct {
 	Entries     []*apiGroupEntry `json:"entries"`
 }
 
-// Compose -
-func Compose(endpoints ...endpoint) *APIService {
-	routes := make(map[string]endpoint)
-	for _, ctrl := range endpoints {
-		ctrl.InitEndpoint(ctrl)
-		s := ctrl.GetScheme()
-		routes[s.url] = ctrl
-	}
-
-	root := createGroupEntry("G", "#root", "")
-	srv := &APIService{
-		rootGroup:   root,
-		activeGroup: root,
-		routes:      routes,
-	}
-
-	http.Handle("/godraft:scheme/", srv)
-
-	return srv
-}
-
-func (api *APIService) getDodraftScheme() *apiGroupEntry {
+func (api *APIService) getGodraftScheme() *apiGroupEntry {
 	if len(api.rootGroup.Entries) == 0 {
 		for p := range api.routes {
 			api.rootGroup.Entries = append(api.rootGroup.Entries, createGroupEntry("E", p, ""))
@@ -52,6 +31,31 @@ func (api *APIService) getDodraftScheme() *apiGroupEntry {
 	}
 
 	return api.rootGroup.init(api)
+}
+
+// Group -
+type Group struct {
+	name  string
+	items []endpoint
+}
+
+// Compose -
+func Compose(name string, items ...endpoint) Group {
+	return Group{name, items}
+}
+
+// Add -
+func (api *APIService) Add(g Group) {
+	api.Group(g.name, "", func() {
+		for _, item := range g.items {
+			api.Handle(item, item.GetHandler())
+		}
+	})
+}
+
+// ListenAndServe -
+func (api *APIService) ListenAndServe(addr string) error {
+	return http.ListenAndServe(addr, api)
 }
 
 // ServeHTTP -
@@ -63,13 +67,7 @@ func (api *APIService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if path == "/godraft:scheme/" {
-		if len(api.rootGroup.Entries) == 0 {
-			for p := range api.routes {
-				api.rootGroup.Entries = append(api.rootGroup.Entries, createGroupEntry("E", p, ""))
-			}
-		}
-
-		result, _ := json.Marshal(api.getDodraftScheme())
+		result, _ := json.Marshal(api.getGodraftScheme())
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.Write(result)
@@ -81,7 +79,7 @@ func (api *APIService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	ctrl, exists := api.routes[path]
 	if exists {
-		if path != r.URL.Path {
+		if path != r.URL.Path || ctrl.GetHandler() == nil {
 			ctrl.EndpointServeHTTP(w, r)
 		} else {
 			ctrl.ServeHTTP(w, r)
@@ -112,12 +110,13 @@ func createGroupEntry(t, name, description string) *apiGroupEntry {
 
 // Group -
 func (api *APIService) Group(name, description string, executer func()) {
-	pg := api.activeGroup
+	parent := api.activeGroup
 	api.activeGroup = createGroupEntry("G", name, description)
 
+	parent.Entries = append(parent.Entries, api.activeGroup)
 	executer()
 
-	api.activeGroup = pg
+	api.activeGroup = parent
 }
 
 // GroupHR -
@@ -126,8 +125,14 @@ func (api *APIService) GroupHR() {
 }
 
 // Handle -
-func (api *APIService) Handle(pattern string, handler http.Handler) {
+func (api *APIService) Handle(endpoint endpoint, handler http.Handler) {
+	endpoint.InitEndpoint(endpoint)
+
+	scheme := endpoint.GetScheme()
+	pattern := scheme.url
+
 	api.activeGroup.Entries = append(api.activeGroup.Entries, createGroupEntry("E", pattern, ""))
+	api.routes[pattern] = endpoint
 
 	if handler == nil {
 		http.Handle(pattern, api)
@@ -137,6 +142,17 @@ func (api *APIService) Handle(pattern string, handler http.Handler) {
 
 	http.Handle("/godraft"+pattern, api)
 	http.Handle("/godraft:scheme"+pattern, api)
+}
+
+// Create -
+func Create() *APIService {
+	root := createGroupEntry("G", "#root", "")
+	srv := &APIService{
+		rootGroup:   root,
+		activeGroup: root,
+		routes:      make(map[string]endpoint),
+	}
+	return srv
 }
 
 func (e *apiGroupEntry) init(api *APIService) *apiGroupEntry {

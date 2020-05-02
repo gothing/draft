@@ -3,6 +3,7 @@ package draft
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 
@@ -13,19 +14,26 @@ import (
 // endpoint — интерфейс «конца»
 type endpoint interface {
 	http.Handler
+	GetHandler() http.HandlerFunc
 	EndpointServeHTTP(http.ResponseWriter, *http.Request)
 	InitEndpoint(ctrl endpoint)
+	InitEndpointScheme(s *Scheme)
 	GetEndpointMock(r *Request) interface{}
 	EndpointHandle(r *http.Request) ([]byte, error)
 	ValidateEndpointMockRequest(r *Request) *Response
-	InitEndpointScheme(s *Scheme)
 	GetScheme() *Scheme
 }
 
 // Endpoint — базовые методы «конца»
 type Endpoint struct {
+	Handler        http.HandlerFunc
 	endpointCtrl   endpoint
 	endpointScheme *Scheme
+}
+
+// GetHandler -
+func (e *Endpoint) GetHandler() http.HandlerFunc {
+	return e.Handler
 }
 
 // InitEndpoint -
@@ -42,18 +50,23 @@ func (e *Endpoint) InitEndpoint(ctrl endpoint) {
 	}
 }
 
+// InitEndpointScheme -
+func (e *Endpoint) InitEndpointScheme(s *Scheme) {
+	log.Println("InitEndpointScheme — not implemented")
+}
+
 // GetScheme -
 func (e *Endpoint) GetScheme() *Scheme {
 	return e.endpointScheme
 }
 
 // ValidateEndpointMockRequest -
-func (e Endpoint) ValidateEndpointMockRequest(r *Request) *Response {
+func (e *Endpoint) ValidateEndpointMockRequest(r *Request) *Response {
 	return nil
 }
 
 // GetEndpointMock -
-func (e Endpoint) GetEndpointMock(r *Request) interface{} {
+func (e *Endpoint) GetEndpointMock(r *Request) interface{} {
 	idx := -1
 	weight := -1
 	cases := e.endpointScheme.Cases()
@@ -100,7 +113,12 @@ func (e Endpoint) GetEndpointMock(r *Request) interface{} {
 
 // ServeHTTP -
 func (e *Endpoint) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	e.EndpointServeHTTP(w, r)
+	handler := e.GetHandler()
+	if handler == nil {
+		e.EndpointServeHTTP(w, r)
+	} else {
+		handler(w, r)
+	}
 }
 
 // EndpointServeHTTP -

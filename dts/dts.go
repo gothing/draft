@@ -4,9 +4,7 @@ import (
 	"github.com/gothing/draft"
 )
 
-type 
-
 // Gen -
-func Gen(s *draft.Scheme): DTS {
+func Gen(s *draft.Scheme) {
 
 }

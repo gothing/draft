@@ -2,6 +2,7 @@ package draft_test
 
 import (
 	"io/ioutil"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 
@@ -35,17 +36,47 @@ func (ue *UserEndpoint) InitEndpointScheme(s *draft.Scheme) {
 
 func TestEndpoint(t *testing.T) {
 	ue := &UserEndpoint{}
-	api := draft.Compose(ue)
+	api := draft.Create()
+	group := draft.Compose("test", ue)
+
+	api.Add(group)
 
 	r := httptest.NewRequest("GET", "http://gothing/api/v1/user", nil)
 	w := httptest.NewRecorder()
 
+	assert.Equal(t, []string{"/api/v1/user"}, api.URLs(), "url")
 	assert.Equal(t, ue.GetScheme().GetCaseByStatus(draft.Status.OK).Name, "Wow!")
 
 	api.ServeHTTP(w, r)
 	resp := w.Result()
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, err := ioutil.ReadAll(resp.Body)
+	assert.Equal(t, nil, err, "error")
 
 	json := `{"status":"ok","body":{"id":20976,"flags":{"is_admin":false,"deleted":false}}}`
 	assert.Equal(t, json, string(body), "Mock")
+}
+
+func TestEndpointWithHandler(t *testing.T) {
+	ue := &UserEndpoint{
+		Endpoint: draft.Endpoint{
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				w.Write([]byte("OK:" + r.URL.Path))
+			},
+		},
+	}
+	api := draft.Create()
+	group := draft.Compose("test", ue)
+
+	api.Add(group)
+
+	r := httptest.NewRequest("GET", "http://gothing/api/v1/user", nil)
+	w := httptest.NewRecorder()
+
+	api.ServeHTTP(w, r)
+	resp := w.Result()
+	body, err := ioutil.ReadAll(resp.Body)
+	assert.Equal(t, nil, err, "error")
+
+	result := `OK:/api/v1/user`
+	assert.Equal(t, result, string(body), "result")
 }
