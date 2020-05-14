@@ -2,6 +2,7 @@ package reflect
 
 import (
 	"reflect"
+	"regexp"
 	"strings"
 
 	"github.com/iancoleman/strcase"
@@ -89,48 +90,7 @@ func initItem(
 		}
 
 	case reflect.Struct:
-		nested := make([]Item, typeRef.NumField())
-
-		for i := 0; i < typeRef.NumField(); i++ {
-			item := &nested[i]
-			f := typeRef.Field(i)
-
-			if o.SnakeCase {
-				item.Name = strcase.ToSnake(f.Name)
-			} else {
-				item.Name = f.Name
-			}
-
-			// fmt.Println(" -", item.Name)
-			fv := valRef.FieldByName(f.Name)
-			zfv := fv
-			if f.Type.Kind() == reflect.Ptr {
-				zfv = reflect.Zero(f.Type.Elem())
-			}
-
-			item.Tags = string(f.Tag)
-			item.Comment = f.Tag.Get("comment")
-			item.Required = f.Tag.Get("required") == "true"
-
-			td := zfv.MethodByName("TypeDescription")
-			if td.IsValid() {
-				c := td.Call([]reflect.Value{})[0].String()
-				if item.Comment == "" {
-					item.Comment = c
-				} else {
-					item.Comment = strings.ReplaceAll(item.Comment, "{super}", c)
-				}
-			}
-
-			tev := zfv.MethodByName("TypeEnumValues")
-			if tev.IsValid() {
-				item.Enum = tev.Call([]reflect.Value{})[0].Interface()
-			}
-
-			initItem(o, item, f.Type, fv)
-		}
-
-		item.Nested = nested
+		item.Nested = initNested(o, typeRef, valRef)
 	}
 }
 
@@ -144,4 +104,64 @@ func (item Item) Keys() []string {
 	}
 
 	return keys
+}
+
+var reIsPrivate = regexp.MustCompile(`^[a-z]`)
+
+func initNested(o Options, typeRef reflect.Type, valRef reflect.Value) []Item {
+	nested := make([]Item, 0, typeRef.NumField())
+
+	for i := 0; i < typeRef.NumField(); i++ {
+		item := &Item{}
+		f := typeRef.Field(i)
+		jsonTag := f.Tag.Get("json")
+
+		if f.Anonymous {
+			sub := initNested(o, f.Type, valRef.FieldByName(f.Name))
+			nested = append(nested, sub...)
+			continue
+		}
+
+		if jsonTag == "-" || reIsPrivate.MatchString(f.Name) {
+			continue
+		} else if jsonTag != "" {
+			item.Name = jsonTag
+		} else if o.SnakeCase {
+			item.Name = strcase.ToSnake(f.Name)
+		} else {
+			item.Name = f.Name
+		}
+
+		nested = append(nested, *item)
+
+		// fmt.Println(" -", item.Name)
+		fv := valRef.FieldByName(f.Name)
+		zfv := fv
+		if f.Type.Kind() == reflect.Ptr {
+			zfv = reflect.Zero(f.Type.Elem())
+		}
+
+		item.Tags = string(f.Tag)
+		item.Comment = f.Tag.Get("comment")
+		item.Required = f.Tag.Get("required") == "true"
+
+		td := zfv.MethodByName("TypeDescription")
+		if td.IsValid() {
+			c := td.Call([]reflect.Value{})[0].String()
+			if item.Comment == "" {
+				item.Comment = c
+			} else {
+				item.Comment = strings.ReplaceAll(item.Comment, "{super}", c)
+			}
+		}
+
+		tev := zfv.MethodByName("TypeEnumValues")
+		if tev.IsValid() {
+			item.Enum = tev.Call([]reflect.Value{})[0].Interface()
+		}
+
+		initItem(o, item, f.Type, fv)
+	}
+
+	return nested
 }
