@@ -42,9 +42,15 @@ func (ue *UserEndpoint) InitEndpointScheme(s *draft.Scheme) {
 
 ```go
 func main() {
-	http.ListenAndServe(srv, draft.Compose(
+	userAPI := draft.Compose(
+		"User API",
 		new(UserEndpoint),
-	))
+	)
+
+	draftSrv := draft.Create()
+	draftSrv.Add(userAPI, nil)
+
+	draftSrv.ListenAndServe(srv)
 }
 ```
 

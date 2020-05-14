@@ -34,12 +34,28 @@ func (ue *UserEndpoint) InitEndpointScheme(s *draft.Scheme) {
 	})
 }
 
+type UserEndpoint2 struct {
+	draft.Endpoint
+}
+
+func (ue *UserEndpoint2) InitEndpointScheme(s *draft.Scheme) {
+	s.URL("/api/v1/user2")
+}
+
+type UserEndpoint3 struct {
+	draft.Endpoint
+}
+
+func (ue *UserEndpoint3) InitEndpointScheme(s *draft.Scheme) {
+	s.URL("/api/v1/user3")
+}
+
 func TestEndpoint(t *testing.T) {
 	ue := &UserEndpoint{}
 	api := draft.Create()
 	group := draft.Compose("test", ue)
 
-	api.Add(group)
+	api.Add(group, nil)
 
 	r := httptest.NewRequest("GET", "http://gothing/api/v1/user", nil)
 	w := httptest.NewRecorder()
@@ -57,7 +73,7 @@ func TestEndpoint(t *testing.T) {
 }
 
 func TestEndpointWithHandler(t *testing.T) {
-	ue := &UserEndpoint{
+	ue := &UserEndpoint2{
 		Endpoint: draft.Endpoint{
 			Handler: func(w http.ResponseWriter, r *http.Request) {
 				w.Write([]byte("OK:" + r.URL.Path))
@@ -67,9 +83,9 @@ func TestEndpointWithHandler(t *testing.T) {
 	api := draft.Create()
 	group := draft.Compose("test", ue)
 
-	api.Add(group)
+	api.Add(group, nil)
 
-	r := httptest.NewRequest("GET", "http://gothing/api/v1/user", nil)
+	r := httptest.NewRequest("GET", "http://gothing/api/v1/user2", nil)
 	w := httptest.NewRecorder()
 
 	api.ServeHTTP(w, r)
@@ -77,6 +93,36 @@ func TestEndpointWithHandler(t *testing.T) {
 	body, err := ioutil.ReadAll(resp.Body)
 	assert.Equal(t, nil, err, "error")
 
-	result := `OK:/api/v1/user`
+	result := `OK:/api/v1/user2`
 	assert.Equal(t, result, string(body), "result")
 }
+
+type testGroupHandler struct {
+}
+
+func (tgh *testGroupHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("WOW:" + r.URL.Path))
+}
+
+func (tgh *testGroupHandler) Routes() []string {
+	return []string{"/api/v1/user3"}
+}
+
+// func TestEndpointWithGroupHandler(t *testing.T) {
+// 	ue := &UserEndpoint3{}
+// 	api := draft.Create()
+// 	group := draft.Compose("test", ue)
+
+// 	api.Add(group, &testGroupHandler{})
+
+// 	r := httptest.NewRequest("GET", "http://gothing/api/v1/user3", nil)
+// 	w := httptest.NewRecorder()
+
+// 	api.ServeHTTP(w, r)
+// 	resp := w.Result()
+// 	body, err := ioutil.ReadAll(resp.Body)
+// 	assert.Equal(t, nil, err, "error")
+
+// 	result := `OK:/api/v1/user3`
+// 	assert.Equal(t, result, string(body), "result")
+// }

@@ -118,7 +118,7 @@ func RenderDOC(api *APIService, w http.ResponseWriter, r *http.Request) {
 
 	if len(pureDocConfig.Groups) == 0 {
 		id := strings.ReplaceAll(r.Host, ":", "-")
-		url := fmt.Sprintf("%s//%s/godraft:scheme/", scheme, r.Host)
+		url := fmt.Sprintf("%s/%s/godraft:scheme/", scheme, r.Host)
 		pureDocConfig.ActiveGroup = id
 		pureDocConfig.Groups = []DocGroup{
 			{

@@ -11,12 +11,13 @@ import (
 	"github.com/iancoleman/orderedmap"
 )
 
-// endpoint — интерфейс «конца»
-type endpoint interface {
+// EndpointAPI — интерфейс «конца»
+type EndpointAPI interface {
 	http.Handler
+	URL() string
 	GetHandler() http.HandlerFunc
 	EndpointServeHTTP(http.ResponseWriter, *http.Request)
-	InitEndpoint(ctrl endpoint)
+	InitEndpoint(ctrl EndpointAPI)
 	InitEndpointScheme(s *Scheme)
 	GetEndpointMock(r *Request) interface{}
 	EndpointHandle(r *http.Request) ([]byte, error)
@@ -27,8 +28,13 @@ type endpoint interface {
 // Endpoint — базовые методы «конца»
 type Endpoint struct {
 	Handler        http.HandlerFunc
-	endpointCtrl   endpoint
+	endpointCtrl   EndpointAPI
 	endpointScheme *Scheme
+}
+
+// URL -
+func (e *Endpoint) URL() string {
+	return e.GetScheme().url
 }
 
 // GetHandler -
@@ -37,7 +43,7 @@ func (e *Endpoint) GetHandler() http.HandlerFunc {
 }
 
 // InitEndpoint -
-func (e *Endpoint) InitEndpoint(ctrl endpoint) {
+func (e *Endpoint) InitEndpoint(ctrl EndpointAPI) {
 	if e.endpointScheme == nil {
 		scheme := &Scheme{
 			defAccess: Access.All,
