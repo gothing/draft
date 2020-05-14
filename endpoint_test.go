@@ -52,7 +52,7 @@ func (ue *UserEndpoint3) InitEndpointScheme(s *draft.Scheme) {
 
 func TestEndpoint(t *testing.T) {
 	ue := &UserEndpoint{}
-	api := draft.Create()
+	api := draft.Create(draft.Config{DevMode: true})
 	group := draft.Compose("test", ue)
 
 	api.Add(group, nil)
@@ -80,7 +80,7 @@ func TestEndpointWithHandler(t *testing.T) {
 			},
 		},
 	}
-	api := draft.Create()
+	api := draft.Create(draft.Config{DevMode: true})
 	group := draft.Compose("test", ue)
 
 	api.Add(group, nil)

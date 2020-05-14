@@ -10,6 +10,7 @@ import (
 // APIService -
 type APIService struct {
 	http.Handler
+	config      Config
 	routes      map[string]apiServiceRoute
 	rootGroup   *apiGroupEntry
 	activeGroup *apiGroupEntry
@@ -76,33 +77,40 @@ func (api *APIService) ListenAndServe(addr string) error {
 // ServeHTTP -
 func (api *APIService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
-	if strings.Contains(path, "/godraft:doc") {
-		RenderDOC(api, w, r)
-		return
-	}
 
-	if path == "/godraft:scheme/" {
-		result, _ := json.Marshal(api.getGodraftScheme())
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.Write(result)
-		return
-	}
+	if api.config.DevMode {
+		if strings.Contains(path, "/godraft:doc") {
+			RenderDOC(api, w, r)
+			return
+		}
 
-	path = strings.Replace(path, "/godraft/", "/", 1)
-	path = strings.Replace(path, "/godraft:scheme/", "/", 1)
+		if path == "/godraft:scheme/" {
+			result, _ := json.Marshal(api.getGodraftScheme())
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
+			w.Write(result)
+			return
+		}
+
+		path = strings.Replace(path, "/godraft/", "/", 1)
+		path = strings.Replace(path, "/godraft:scheme/", "/", 1)
+	}
 
 	route, exists := api.routes[path]
 	if exists {
 		if path != r.URL.Path || !isHTTPHandler(route.handler) {
-			route.ctrl.ServeHTTP(w, r)
+			if api.config.DevMode {
+				route.ctrl.ServeHTTP(w, r)
+				return
+			}
 		} else {
 			route.handler.ServeHTTP(w, r)
+			return
 		}
-	} else {
-		w.WriteHeader(404)
-		_, _ = w.Write([]byte(fmt.Sprintf("'%s' not found", path)))
 	}
+
+	w.WriteHeader(404)
+	_, _ = w.Write([]byte(fmt.Sprintf("'%s' not found", path)))
 }
 
 // URLs -
@@ -152,29 +160,37 @@ func (api *APIService) Handle(endpoint EndpointAPI, handler http.Handler) {
 
 	if isHTTPHandler(handler) {
 		http.Handle(pattern, handler)
-	} else {
+	} else if api.config.DevMode {
 		http.Handle(pattern, api)
 	}
 
-	http.Handle("/godraft"+pattern, api)
-	http.Handle("/godraft:doc"+pattern, api)
-	http.Handle("/godraft:docs"+pattern, api)
-	http.Handle("/godraft:scheme"+pattern, api)
+	if api.config.DevMode {
+		http.Handle("/godraft"+pattern, api)
+		http.Handle("/godraft:doc"+pattern, api)
+		http.Handle("/godraft:docs"+pattern, api)
+		http.Handle("/godraft:scheme"+pattern, api)
+	}
 }
 
 // ugly!
 var draftHandled = false
 
+// Config
+type Config struct {
+	DevMode bool
+}
+
 // Create -
-func Create() *APIService {
+func Create(cfg Config) *APIService {
 	root := createGroupEntry("G", "#root", "")
 	srv := &APIService{
+		config:      cfg,
 		rootGroup:   root,
 		activeGroup: root,
 		routes:      make(map[string]apiServiceRoute),
 	}
 
-	if !draftHandled {
+	if cfg.DevMode && !draftHandled {
 		draftHandled = true
 		http.Handle("/godraft:doc/", srv)
 		http.Handle("/godraft:docs/", srv)

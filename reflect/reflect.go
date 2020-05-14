@@ -132,8 +132,6 @@ func initNested(o Options, typeRef reflect.Type, valRef reflect.Value) []Item {
 			item.Name = f.Name
 		}
 
-		nested = append(nested, *item)
-
 		// fmt.Println(" -", item.Name)
 		fv := valRef.FieldByName(f.Name)
 		zfv := fv
@@ -161,6 +159,7 @@ func initNested(o Options, typeRef reflect.Type, valRef reflect.Value) []Item {
 		}
 
 		initItem(o, item, f.Type, fv)
+		nested = append(nested, *item)
 	}
 
 	return nested

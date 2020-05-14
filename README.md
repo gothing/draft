@@ -42,14 +42,15 @@ func (ue *UserEndpoint) InitEndpointScheme(s *draft.Scheme) {
 
 ```go
 func main() {
+	draftSrv := draft.Create(darft.Config{
+		DevMode: true, // Not production
+	})
 	userAPI := draft.Compose(
 		"User API",
 		new(UserEndpoint),
 	)
 
-	draftSrv := draft.Create()
-	draftSrv.Add(userAPI, nil)
-
+draftSrv.Add(userAPI, nil)
 	draftSrv.ListenAndServe(srv)
 }
 ```
