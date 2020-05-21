@@ -79,6 +79,11 @@ func (api *APIService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
 
 	if api.config.DevMode {
+		if strings.Contains(path, "/godraft:request/") {
+			doDraftRequest(api, w, r)
+			return
+		}
+
 		if strings.Contains(path, "/godraft:doc") {
 			RenderDOC(api, w, r)
 			return
@@ -195,6 +200,7 @@ func Create(cfg Config) *APIService {
 		http.Handle("/godraft:doc/", srv)
 		http.Handle("/godraft:docs/", srv)
 		http.Handle("/godraft:scheme/", srv)
+		http.Handle("/godraft:request/", srv)
 	}
 
 	return srv

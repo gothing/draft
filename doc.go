@@ -21,11 +21,12 @@ var (
 
 // DocConfig -
 type DocConfig struct {
-	FrontURL    string       `json:"front_url"`
-	ActiveGroup string       `json:"active_group"`
-	Groups      []DocGroup   `json:"groups"`
-	Projects    []DocProject `json:"projects"`
-	Rights      []DocAccess  `json:"rights"`
+	FrontURL       string         `json:"front_url"`
+	ActiveGroup    string         `json:"active_group"`
+	Groups         []DocGroup     `json:"groups"`
+	Projects       []DocProject   `json:"projects"`
+	Rights         []DocAccess    `json:"rights"`
+	RequestFactory RequestFactory `json:"-"`
 }
 
 // DocGroup -
@@ -47,19 +48,21 @@ type DocProject struct {
 
 // DocAccess -
 type DocAccess struct {
-	ID         AccessType       `json:"id"`
-	Name       string           `json:"name"`
-	Descrition string           `json:"descrition"`
-	Badge      string           `json:"badge"`
-	Extra      []DocAccessExtra `json:"extra"`
+	ID          AccessType       `json:"id"`
+	Name        string           `json:"name"`
+	Description string           `json:"description"`
+	Badge       string           `json:"badge"`
+	Extra       []DocAccessExtra `json:"extra"`
+	ReqPrepare  RequestPrepare   `json:"-"`
 }
 
 // DocAccessExtra -
 type DocAccessExtra struct {
-	Name       string      `json:"name"`
-	Descrition string      `json:"descrition"`
-	Headers    interface{} `json:"headers"`
-	Params     interface{} `json:"params"`
+	Name        string         `json:"name"`
+	Description string         `json:"description"`
+	Headers     interface{}    `json:"headers"`
+	Params      interface{}    `json:"params"`
+	ReqPrepare  RequestPrepare `json:"-"`
 }
 
 type docFrontConfig struct {
