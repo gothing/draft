@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gothing/draft/reflect"
 	"github.com/iancoleman/orderedmap"
@@ -131,6 +132,7 @@ func (e *Endpoint) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (e *Endpoint) EndpointServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("GODRAFT-Time", time.Now().Format(time.RFC3339))
 
 	bytes, err := e.endpointCtrl.EndpointHandle(r)
 	if err != nil {
