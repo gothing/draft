@@ -2,6 +2,8 @@ draft
 -----
 Self-documenting code
 
+[GODRAFT](https://repository-images.githubusercontent.com/251119592/10ed4a00-9b8a-11ea-9b08-ae5f7916de6f)
+
 ### Installing
 
 ```sh
