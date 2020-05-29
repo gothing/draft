@@ -9,11 +9,13 @@ var Access = struct {
 	Auth         AccessType
 	AuthOptional AccessType
 	Cookie       AccessType
+	AuthCookie   AccessType
 	Signature    AccessType
 }{
 	"all",
 	"auth",
 	"auth:optional",
 	"cookie",
+	"auth:cookie",
 	"signature",
 }
