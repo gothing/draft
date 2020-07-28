@@ -90,9 +90,16 @@ func (api *APIService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if path == "/godraft:scheme/" {
-			result, _ := json.Marshal(api.getGodraftScheme())
+			result, err := json.Marshal(api.getGodraftScheme())
 			w.Header().Set("Access-Control-Allow-Origin", "*")
 			w.Header().Set("Content-Type", "application/json; charset=utf-8")
+
+			if err != nil {
+				w.Header().Set("X-GODraft-Scheme-Marshal-Error", err.Error())
+				w.Write([]byte(fmt.Sprintf(`{"error":%q}`, err.Error())))
+				return
+			}
+
 			w.Write(result)
 			return
 		}
