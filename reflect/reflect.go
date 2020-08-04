@@ -106,7 +106,10 @@ func (item Item) Keys() []string {
 	return keys
 }
 
-var reIsPrivate = regexp.MustCompile(`^[a-z]`)
+var (
+	reIsPrivate   = regexp.MustCompile(`^[a-z]`)
+	reJsonTagName = regexp.MustCompile(`^[^,]+`)
+)
 
 func initNested(o Options, typeRef reflect.Type, valRef reflect.Value) []Item {
 	nested := make([]Item, 0, typeRef.NumField())
@@ -125,7 +128,7 @@ func initNested(o Options, typeRef reflect.Type, valRef reflect.Value) []Item {
 		if jsonTag == "-" || reIsPrivate.MatchString(f.Name) {
 			continue
 		} else if jsonTag != "" {
-			item.Name = jsonTag
+			item.Name = reJsonTagName.FindString(jsonTag)
 		} else if o.SnakeCase {
 			item.Name = strcase.ToSnake(f.Name)
 		} else {
