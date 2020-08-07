@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"time"
 )
 
 // RequestFactory -
@@ -25,6 +24,7 @@ type RequestFactoryParams struct {
 	Access      AccessType `json:"access"`
 	AccessExtra string     `json:"access_extra"`
 	Method      MethodType `json:"method"`
+	Scheme      string     `json:"scheme"`
 	Host        string     `json:"host"`
 	Path        string     `json:"path"`
 	Values      url.Values `json:"values"`
@@ -65,7 +65,12 @@ func NewHTTPRequest(params RequestFactoryParams) (*http.Request, error) {
 	req.Header = make(http.Header)
 	req.Header.Set(HeaderRequestID, NewRequestID())
 
-	rawURL := "https://" + params.Host + params.Path
+	scheme := params.Scheme
+	if scheme == "" {
+		scheme = "https"
+	}
+
+	rawURL := scheme + "://" + params.Host + params.Path
 	u, err := url.Parse(rawURL)
 	if err != nil {
 		return nil, fmt.Errorf("url '%s' parse failed: %s", rawURL, err)
@@ -117,10 +122,6 @@ type requestFactoryResponseGeneral struct {
 	// RemoteAddress string `json:"remote_address"`
 }
 
-var defaultHTTPClient = &http.Client{
-	Timeout: time.Second * 5,
-}
-
 func doDraftRequest(api *APIService, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 
@@ -148,7 +149,7 @@ func doDraftRequest(api *APIService, w http.ResponseWriter, r *http.Request) {
 		QueryParams:    req.URL.Query(),
 	}
 
-	reqResp, err := defaultHTTPClient.Do(req)
+	reqResp, err := api.endpointClient.Do(req)
 	if err != nil {
 		writeRequestFactoryError(w, "DO_REQUEST", err)
 		return
