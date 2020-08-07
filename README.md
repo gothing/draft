@@ -20,8 +20,8 @@ go get github.com/gothing/draft
 
 ### Communication & Articles
 
-- 📣https://t.me/joinchat/C0HLDxwwuQrH-lWBhBDbTA
-- 📝https://medium.com/@ibnRubaXa/godraft-93307bb56794
+- 📣 https://t.me/joinchat/C0HLDxwwuQrH-lWBhBDbTA
+- 📝 https://medium.com/@ibnRubaXa/godraft-93307bb56794
 
 
 ---
