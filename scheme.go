@@ -18,31 +18,69 @@ type Scheme struct {
 	defMethod  MethodType
 	defParams  interface{}
 	defBody    interface{}
+	defHeaders SchemeCaseHeaders
 	activeCase *SchemeCase
 }
 
 // SchemeCase — описание и пример использование
 type SchemeCase struct {
-	Name        string      `json:"name"`
-	Description string      `json:"description"`
-	Access      AccessType  `json:"access"`
-	Status      StatusType  `json:"status"`
-	Method      MethodType  `json:"method"`
-	Params      interface{} `json:"params"`
-	Body        interface{} `json:"body"`
+	Name        string            `json:"name"`
+	Description string            `json:"description"`
+	Access      AccessType        `json:"access"`
+	Status      StatusType        `json:"status"`
+	Method      MethodType        `json:"method"`
+	Params      interface{}       `json:"params"`
+	Headers     SchemeCaseHeaders `json:"headers"`
+	Body        interface{}       `json:"body"`
 }
 
-// URL —
+// SchemeCaseHeaders - описание хедеров
+type SchemeCaseHeaders struct {
+	Request  interface{} `json:"request"`
+	Response interface{} `json:"response"`
+}
+
+// JSONScheme —
+type JSONScheme struct {
+	URL         string                           `json:"url"`
+	Name        string                           `json:"name"`
+	Project     string                           `json:"project"`
+	Description string                           `json:"description"`
+	Detail      map[StatusType]*JSONSchemeDetail `json:"detail"`
+	Cases       []*SchemeCase                    `json:"cases"`
+}
+
+// JSONSchemeDetail —
+type JSONSchemeDetail struct {
+	Access   AccessType          `json:"access"`
+	Request  *JSONSchemeRequest  `json:"request"`
+	Response *JSONSchemeResponse `json:"response"`
+}
+
+// JSONSchemeRequest -
+type JSONSchemeRequest struct {
+	Method  MethodType              `json:"method"`
+	Headers map[string]reflect.Item `json:"headers"`
+	Params  map[string]reflect.Item `json:"params"`
+}
+
+// JSONSchemeResponse -
+type JSONSchemeResponse struct {
+	Headers map[string]reflect.Item `json:"headers"`
+	Body    map[string]reflect.Item `json:"body"`
+}
+
+// URL — относительный url
 func (s *Scheme) URL(v string) {
 	s.url = v
 }
 
-// Name —
+// Name — Нзвание конца
 func (s *Scheme) Name(v string) {
 	s.name = v
 }
 
-// Access — выставить права доступа к апишке или `case`
+// Project — выставить права доступа к апишке или `case`
 func (s *Scheme) Project(v string) {
 	s.project = v
 }
@@ -83,6 +121,24 @@ func (s *Scheme) Params(v interface{}) {
 	}
 }
 
+// RequestHeaders — заголовки запроса
+func (s *Scheme) RequestHeaders(v interface{}) {
+	if s.activeCase != nil {
+		s.activeCase.Headers.Request = v
+	} else {
+		s.defHeaders.Request = v
+	}
+}
+
+// ResponseHeaders — заголовки ответа
+func (s *Scheme) ResponseHeaders(v interface{}) {
+	if s.activeCase != nil {
+		s.activeCase.Headers.Response = v
+	} else {
+		s.defHeaders.Response = v
+	}
+}
+
 // Body — выставить ответ к апишке или `case`
 func (s *Scheme) Body(v interface{}) {
 	if s.activeCase != nil {
@@ -103,38 +159,16 @@ func (s *Scheme) Case(status StatusType, name string, fn func()) {
 		Method: s.defMethod,
 		Access: s.defAccess,
 		Params: s.defParams,
-		Body:   s.defBody,
+		Headers: SchemeCaseHeaders{
+			Request:  s.defHeaders.Request,
+			Response: s.defHeaders.Response,
+		},
+		Body: s.defBody,
 	}
+
 	s.cases = append(s.cases, s.activeCase)
 	fn()
 	s.activeCase = nil
-}
-
-// JSONScheme —
-type JSONScheme struct {
-	Name        string                           `json:"name"`
-	Project     string                           `json:"project"`
-	Description string                           `json:"description"`
-	Detail      map[StatusType]*JSONSchemeDetail `json:"detail"`
-	Cases       []*SchemeCase                    `json:"cases"`
-}
-
-// JSONSchemeDetail —
-type JSONSchemeDetail struct {
-	Access   AccessType          `json:"access"`
-	Request  *JSONSchemeRequest  `json:"request"`
-	Response *JSONSchemeResponse `json:"response"`
-}
-
-// JSONSchemeRequest -
-type JSONSchemeRequest struct {
-	Method MethodType              `json:"method"`
-	Params map[string]reflect.Item `json:"params"`
-}
-
-// JSONSchemeResponse -
-type JSONSchemeResponse struct {
-	Body map[string]reflect.Item `json:"body"`
 }
 
 // Cases —
@@ -155,6 +189,7 @@ func (s *Scheme) GetCaseByStatus(v StatusType) *SchemeCase {
 // ToJSON — определить описание и пример использования
 func (s *Scheme) ToJSON() JSONScheme {
 	json := JSONScheme{
+		URL:         s.url,
 		Name:        s.name,
 		Project:     s.project,
 		Description: s.descr,
@@ -167,12 +202,14 @@ func (s *Scheme) ToJSON() JSONScheme {
 		if !exists {
 			d = &JSONSchemeDetail{
 				Request: &JSONSchemeRequest{
-					Method: c.Method,
-					Params: make(map[string]reflect.Item),
+					Method:  c.Method,
+					Headers: make(map[string]reflect.Item),
+					Params:  make(map[string]reflect.Item),
 				},
 
 				Response: &JSONSchemeResponse{
-					Body: make(map[string]reflect.Item),
+					Headers: make(map[string]reflect.Item),
+					Body:    make(map[string]reflect.Item),
 				},
 			}
 
@@ -183,6 +220,10 @@ func (s *Scheme) ToJSON() JSONScheme {
 
 		nc := &SchemeCase{}
 		*nc = *c
+
+		nc.Headers.Request = setReflectObjectMap(d.Request.Headers, c.Headers.Request)
+		nc.Headers.Response = setReflectObjectMap(d.Response.Headers, c.Headers.Response)
+
 		nc.Params = setReflectObjectMap(d.Request.Params, c.Params)
 		nc.Body = setReflectObjectMap(d.Response.Body, c.Body)
 

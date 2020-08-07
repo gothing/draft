@@ -150,6 +150,11 @@ func SetupDoc(c DocConfig) {
 	pureDocConfig = c
 }
 
+// GetDocConfig -
+func GetDocConfig() DocConfig {
+	return pureDocConfig
+}
+
 func preapreFrontRights(rights []DocAccess) []docFrontAccess {
 	if rights == nil {
 		return make([]docFrontAccess, 0)
@@ -192,4 +197,24 @@ func prepareFrontAccessExtra(extra []DocAccessExtra) []docFrontAccessExtra {
 	}
 
 	return list
+}
+
+func findDocProject(id string) *DocProject {
+	for _, v := range pureDocConfig.Projects {
+		if v.ID == id {
+			return &v
+		}
+	}
+
+	return nil
+}
+
+func findDocAccess(id AccessType) *DocAccess {
+	for _, v := range pureDocConfig.Rights {
+		if v.ID == id {
+			return &v
+		}
+	}
+
+	return nil
 }

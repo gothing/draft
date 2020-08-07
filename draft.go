@@ -187,7 +187,7 @@ func (api *APIService) Handle(endpoint EndpointAPI, handler http.Handler) {
 // ugly!
 var draftHandled = false
 
-// Config
+// Config -
 type Config struct {
 	DevMode bool
 }
