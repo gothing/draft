@@ -1,19 +1,22 @@
 package draft
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 )
 
 // APIService -
 type APIService struct {
 	http.Handler
-	config      Config
-	routes      map[string]apiServiceRoute
-	rootGroup   *apiGroupEntry
-	activeGroup *apiGroupEntry
+	config         Config
+	routes         map[string]apiServiceRoute
+	rootGroup      *apiGroupEntry
+	activeGroup    *apiGroupEntry
+	endpointClient *http.Client
 }
 
 type apiServiceRoute struct {
@@ -189,7 +192,14 @@ var draftHandled = false
 
 // Config -
 type Config struct {
-	DevMode bool
+	DevMode      bool
+	ClientConfig ClientConfig
+}
+
+// ClientConfig -
+type ClientConfig struct {
+	RequestTimeout time.Duration
+	SkipVerifyCert bool
 }
 
 // Create -
@@ -200,6 +210,14 @@ func Create(cfg Config) *APIService {
 		rootGroup:   root,
 		activeGroup: root,
 		routes:      make(map[string]apiServiceRoute),
+		endpointClient: &http.Client{
+			Timeout: cfg.ClientConfig.RequestTimeout,
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					InsecureSkipVerify: cfg.ClientConfig.SkipVerifyCert,
+				},
+			},
+		},
 	}
 
 	if cfg.DevMode && !draftHandled {
