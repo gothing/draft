@@ -47,8 +47,9 @@ func (e *Endpoint) GetHandler() http.HandlerFunc {
 func (e *Endpoint) InitEndpoint(ctrl EndpointAPI) {
 	if e.endpointScheme == nil {
 		scheme := &Scheme{
-			defAccess: Access.All,
-			defMethod: Method.POST,
+			defAccess:   Access.All,
+			defMethod:   Method.POST,
+			defConsumes: Mime.Any,
 		}
 		e.endpointCtrl = ctrl
 		e.endpointScheme = scheme

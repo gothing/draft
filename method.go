@@ -21,3 +21,19 @@ var Method = struct {
 	"HEAD",
 	"OPTIONS",
 }
+
+// MimeType -
+type MimeType string
+
+// Mime -
+var Mime = struct {
+	Any                MimeType
+	JSON               MimeType
+	FormData           MimeType
+	XWWWFormUrlencoded MimeType
+}{
+	"",
+	"application/json",
+	"multipart/form-data",
+	"application/x-www-form-urlencoded",
+}
