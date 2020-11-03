@@ -19,6 +19,7 @@ type Scheme struct {
 	defParams  interface{}
 	defBody    interface{}
 	defHeaders SchemeCaseHeaders
+	defCookies SchemeCaseCookies
 	activeCase *SchemeCase
 }
 
@@ -31,11 +32,18 @@ type SchemeCase struct {
 	Method      MethodType        `json:"method"`
 	Params      interface{}       `json:"params"`
 	Headers     SchemeCaseHeaders `json:"headers"`
+	Cookies     SchemeCaseCookies `json:"cookies"`
 	Body        interface{}       `json:"body"`
 }
 
 // SchemeCaseHeaders - описание хедеров
 type SchemeCaseHeaders struct {
+	Request  interface{} `json:"request"`
+	Response interface{} `json:"response"`
+}
+
+// SchemeCaseHeaders - описание кук
+type SchemeCaseCookies struct {
 	Request  interface{} `json:"request"`
 	Response interface{} `json:"response"`
 }
@@ -61,12 +69,14 @@ type JSONSchemeDetail struct {
 type JSONSchemeRequest struct {
 	Method  MethodType              `json:"method"`
 	Headers map[string]reflect.Item `json:"headers"`
+	Cookies map[string]reflect.Item `json:"cookies"`
 	Params  map[string]reflect.Item `json:"params"`
 }
 
 // JSONSchemeResponse -
 type JSONSchemeResponse struct {
 	Headers map[string]reflect.Item `json:"headers"`
+	Cookies map[string]reflect.Item `json:"cookies"`
 	Body    map[string]reflect.Item `json:"body"`
 }
 
@@ -130,12 +140,30 @@ func (s *Scheme) RequestHeaders(v interface{}) {
 	}
 }
 
+// RequestCookies — куки запроса
+func (s *Scheme) RequestCookies(v interface{}) {
+	if s.activeCase != nil {
+		s.activeCase.Cookies.Request = v
+	} else {
+		s.defCookies.Request = v
+	}
+}
+
 // ResponseHeaders — заголовки ответа
 func (s *Scheme) ResponseHeaders(v interface{}) {
 	if s.activeCase != nil {
 		s.activeCase.Headers.Response = v
 	} else {
 		s.defHeaders.Response = v
+	}
+}
+
+// ResponseCookies — куки ответа
+func (s *Scheme) ResponseCookies(v interface{}) {
+	if s.activeCase != nil {
+		s.activeCase.Cookies.Response = v
+	} else {
+		s.defCookies.Response = v
 	}
 }
 
@@ -162,6 +190,10 @@ func (s *Scheme) Case(status StatusType, name string, fn func()) {
 		Headers: SchemeCaseHeaders{
 			Request:  s.defHeaders.Request,
 			Response: s.defHeaders.Response,
+		},
+		Cookies: SchemeCaseCookies{
+			Request:  s.defCookies.Request,
+			Response: s.defCookies.Response,
 		},
 		Body: s.defBody,
 	}
@@ -204,11 +236,13 @@ func (s *Scheme) ToJSON() JSONScheme {
 				Request: &JSONSchemeRequest{
 					Method:  c.Method,
 					Headers: make(map[string]reflect.Item),
+					Cookies: make(map[string]reflect.Item),
 					Params:  make(map[string]reflect.Item),
 				},
 
 				Response: &JSONSchemeResponse{
 					Headers: make(map[string]reflect.Item),
+					Cookies: make(map[string]reflect.Item),
 					Body:    make(map[string]reflect.Item),
 				},
 			}
@@ -223,6 +257,9 @@ func (s *Scheme) ToJSON() JSONScheme {
 
 		nc.Headers.Request = setReflectObjectMap(d.Request.Headers, c.Headers.Request)
 		nc.Headers.Response = setReflectObjectMap(d.Response.Headers, c.Headers.Response)
+
+		nc.Cookies.Request = setReflectObjectMap(d.Request.Cookies, c.Cookies.Request)
+		nc.Cookies.Response = setReflectObjectMap(d.Response.Cookies, c.Cookies.Response)
 
 		nc.Params = setReflectObjectMap(d.Request.Params, c.Params)
 		nc.Body = setReflectObjectMap(d.Response.Body, c.Body)

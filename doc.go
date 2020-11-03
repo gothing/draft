@@ -61,6 +61,7 @@ type DocAccessExtra struct {
 	Name        string         `json:"name"`
 	Description string         `json:"description"`
 	Headers     interface{}    `json:"headers"`
+	Cookies     interface{}    `json:"cookies"`
 	Params      interface{}    `json:"params"`
 	ReqPrepare  RequestPrepare `json:"-"`
 }
@@ -78,6 +79,7 @@ type docFrontAccess struct {
 type docFrontAccessExtra struct {
 	DocAccessExtra
 	Headers docFrontAccessExtraReflectItem `json:"headers"`
+	Cookies docFrontAccessExtraReflectItem `json:"cookies"`
 	Params  docFrontAccessExtraReflectItem `json:"params"`
 }
 
@@ -187,6 +189,11 @@ func prepareFrontAccessExtra(extra []DocAccessExtra) []docFrontAccessExtra {
 			Headers: docFrontAccessExtraReflectItem{
 				Value:   e.Headers,
 				Reflect: reflect.Get(e.Headers, opts),
+			},
+
+			Cookies: docFrontAccessExtraReflectItem{
+				Value:   e.Cookies,
+				Reflect: reflect.Get(e.Cookies, opts),
 			},
 
 			Params: docFrontAccessExtraReflectItem{
