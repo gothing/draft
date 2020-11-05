@@ -170,7 +170,7 @@ func init() {
 				Extra: []draft.DocAccessExtra{
 					{
 						Name: "mPOP",
-						Headers: struct {
+						Cookies: struct {
 							Cookie string `json:"cookie" required:"true" comment:"mPOP-куки"`
 						}{"Mpop=...;"},
 						Params: struct {
