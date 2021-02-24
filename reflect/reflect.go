@@ -15,15 +15,16 @@ type Options struct {
 
 // Item -
 type Item struct {
-	Name     string      `json:"name"`
-	Value    interface{} `json:"-"`
-	Enum     interface{} `json:"enum"`
-	Type     string      `json:"type"`
-	MetaType string      `json:"meta_type"`
-	Tags     string      `json:"tags"`
-	Comment  string      `json:"comment"`
-	Required bool        `json:"required"`
-	Nested   []Item      `json:"nested"`
+	Name       string      `json:"name"`
+	Value      interface{} `json:"-"`
+	Enum       interface{} `json:"enum"`
+	Type       string      `json:"type"`
+	MetaType   string      `json:"meta_type"`
+	Tags       string      `json:"tags"`
+	Comment    string      `json:"comment"`
+	Required   bool        `json:"required"`
+	Deprecated bool        `json:"deprecated"`
+	Nested     []Item      `json:"nested"`
 }
 
 // Get -
@@ -149,6 +150,7 @@ func initNested(o Options, typeRef reflect.Type, valRef reflect.Value) []Item {
 		item.Tags = string(f.Tag)
 		item.Comment = f.Tag.Get("comment")
 		item.Required = f.Tag.Get("required") == "true"
+		item.Deprecated = f.Tag.Get("deprecated") == "true"
 
 		td := zfv.MethodByName("TypeDescription")
 		if td.IsValid() {
