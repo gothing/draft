@@ -13,6 +13,7 @@ type Scheme struct {
 	name       string
 	descr      string
 	project    string
+	deprecated bool
 	cases      []*SchemeCase
 	defAccess  AccessType
 	defMethod  MethodType
@@ -54,6 +55,7 @@ type JSONScheme struct {
 	Name        string                           `json:"name"`
 	Project     string                           `json:"project"`
 	Description string                           `json:"description"`
+	Deprecated  bool                             `json:"deprecated"`
 	Detail      map[StatusType]*JSONSchemeDetail `json:"detail"`
 	Cases       []*SchemeCase                    `json:"cases"`
 }
@@ -203,6 +205,11 @@ func (s *Scheme) Case(status StatusType, name string, fn func()) {
 	s.activeCase = nil
 }
 
+// Deprecated -
+func (s *Scheme) Deprecated(v bool) {
+	s.deprecated = v
+}
+
 // Cases —
 func (s *Scheme) Cases() []*SchemeCase {
 	return s.cases
@@ -225,6 +232,7 @@ func (s *Scheme) ToJSON() JSONScheme {
 		Name:        s.name,
 		Project:     s.project,
 		Description: s.descr,
+		Deprecated:  s.deprecated,
 		Detail:      make(map[StatusType]*JSONSchemeDetail),
 		Cases:       make([]*SchemeCase, len(s.cases)),
 	}
