@@ -28,6 +28,7 @@ type Scheme struct {
 type SchemeCase struct {
 	Name        string            `json:"name"`
 	Description string            `json:"description"`
+	Deprecated  bool              `json:"deprecated"`
 	Access      AccessType        `json:"access"`
 	Status      StatusType        `json:"status"`
 	Method      MethodType        `json:"method"`
@@ -43,7 +44,7 @@ type SchemeCaseHeaders struct {
 	Response interface{} `json:"response"`
 }
 
-// SchemeCaseHeaders - описание кук
+// SchemeCaseCookies - описание кук
 type SchemeCaseCookies struct {
 	Request  interface{} `json:"request"`
 	Response interface{} `json:"response"`
@@ -207,7 +208,11 @@ func (s *Scheme) Case(status StatusType, name string, fn func()) {
 
 // Deprecated -
 func (s *Scheme) Deprecated(v bool) {
-	s.deprecated = v
+	if s.activeCase != nil {
+		s.activeCase.Deprecated = v
+	} else {
+		s.deprecated = v
+	}
 }
 
 // Cases —
