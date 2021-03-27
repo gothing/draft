@@ -77,21 +77,39 @@ func (e *Endpoint) GetEndpointMock(r *Request) interface{} {
 	idx := -1
 	weight := -1
 	cases := e.endpointScheme.Cases()
-	missed := []string{}
 
+	var missed []string
 	for i, c := range cases {
 		if Status.OK == c.Status {
 			w := 0
 			ref := reflect.Get(c.Params, reflect.Options{SnakeCase: true})
 			m := make([]string, 0, len(ref.Nested))
 
+			reqByGrp := make(map[string]bool)
 			for _, item := range ref.Nested {
-				if !r.Params.Has(item.Name) && item.Required {
-					m = append(m, item.Name)
+				if item.RequiredGroup != "" {
+					reqByGrp[item.RequiredGroup] = false
 				}
+			}
 
+			for _, item := range ref.Nested {
+				if item.Required {
+					if r.Params.Has(item.Name) {
+						if item.RequiredGroup != "" {
+							reqByGrp[item.RequiredGroup] = true
+						}
+					} else if _, ok := reqByGrp[item.RequiredGroup]; !ok {
+						m = append(m, item.Name)
+					}
+				}
 				if r.Params.Get(item.Name) == fmt.Sprintf("%v", item.Value) {
 					w++
+				}
+			}
+
+			for group, present := range reqByGrp {
+				if !present {
+					m = append(m, fmt.Sprintf("[%s]", group))
 				}
 			}
 
