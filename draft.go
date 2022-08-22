@@ -173,10 +173,12 @@ func (api *APIService) Handle(endpoint EndpointAPI, handler http.Handler) {
 		ctrl:    endpoint,
 	}
 
-	if isHTTPHandler(handler) {
-		http.Handle(pattern, handler)
-	} else if api.config.DevMode {
-		http.Handle(pattern, api)
+	if api.config.MockMode == MockEnable {
+		if isHTTPHandler(handler) {
+			http.Handle(pattern, handler)
+		} else if api.config.DevMode {
+			http.Handle(pattern, api)
+		}
 	}
 
 	if api.config.DevMode {
@@ -194,6 +196,7 @@ var draftHandled = false
 type Config struct {
 	DevMode      bool
 	ClientConfig ClientConfig
+	MockMode     MockMode
 }
 
 // ClientConfig -
@@ -201,6 +204,14 @@ type ClientConfig struct {
 	RequestTimeout time.Duration
 	SkipVerifyCert bool
 }
+
+// MockMode -
+type MockMode int
+
+const (
+	MockEnable MockMode = iota
+	MockDisable
+)
 
 // Create -
 func Create(cfg Config) *APIService {
