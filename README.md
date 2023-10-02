@@ -87,6 +87,30 @@ func main() {
 
 <a name="serve-with-impl"></a>
 
+#### Listen And Serve with custom ServeMux
+
+Replace http.DefaultServeMux with custom one if you need.
+
+```go
+func main() {
+	mux := http.NewServeMux()
+	draftSrv := draft.CreateWithMux(mux,
+		darft.Config{
+			DevMode: true, // Not production
+		},
+	)
+	userAPI := draft.Compose(
+		"User API",
+		new(UserEndpoint),
+	)
+
+	draftSrv.Add(userAPI)
+	draftSrv.ListenAndServe(srv)
+}
+```
+
+<a name="serve-with-impl"></a>
+
 #### Listen And Serve with implementation
 
 ⚠️ See second argument for `draftSrv.Add`
