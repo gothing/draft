@@ -164,6 +164,10 @@ func (api *APIService) GroupHR() {
 
 // Handle -
 func (api *APIService) Handle(endpoint EndpointAPI, handler http.Handler) {
+	api.HandleWithMux(http.DefaultServeMux, endpoint, handler)
+}
+
+func (api *APIService) HandleWithMux(mux *http.ServeMux, endpoint EndpointAPI, handler http.Handler) {
 	endpoint.InitEndpoint(endpoint)
 	pattern := endpoint.URL()
 
@@ -175,17 +179,17 @@ func (api *APIService) Handle(endpoint EndpointAPI, handler http.Handler) {
 
 	if api.config.MockMode == MockEnable {
 		if isHTTPHandler(handler) {
-			http.Handle(pattern, handler)
+			mux.Handle(pattern, handler)
 		} else if api.config.DevMode {
-			http.Handle(pattern, api)
+			mux.Handle(pattern, api)
 		}
 	}
 
 	if api.config.DevMode {
-		http.Handle("/godraft"+pattern, api)
-		http.Handle("/godraft:doc"+pattern, api)
-		http.Handle("/godraft:docs"+pattern, api)
-		http.Handle("/godraft:scheme"+pattern, api)
+		mux.Handle("/godraft"+pattern, api)
+		mux.Handle("/godraft:doc"+pattern, api)
+		mux.Handle("/godraft:docs"+pattern, api)
+		mux.Handle("/godraft:scheme"+pattern, api)
 	}
 }
 
@@ -215,6 +219,10 @@ const (
 
 // Create -
 func Create(cfg Config) *APIService {
+	return CreateWithMux(http.DefaultServeMux, cfg)
+}
+
+func CreateWithMux(mux *http.ServeMux, cfg Config) *APIService {
 	root := createGroupEntry("G", "#root", "")
 	srv := &APIService{
 		config:      cfg,
@@ -233,10 +241,10 @@ func Create(cfg Config) *APIService {
 
 	if cfg.DevMode && !draftHandled {
 		draftHandled = true
-		http.Handle("/godraft:doc/", srv)
-		http.Handle("/godraft:docs/", srv)
-		http.Handle("/godraft:scheme/", srv)
-		http.Handle("/godraft:request/", srv)
+		mux.Handle("/godraft:doc/", srv)
+		mux.Handle("/godraft:docs/", srv)
+		mux.Handle("/godraft:scheme/", srv)
+		mux.Handle("/godraft:request/", srv)
 	}
 
 	return srv
