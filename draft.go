@@ -12,6 +12,7 @@ import (
 // APIService -
 type APIService struct {
 	http.Handler
+	mux            *http.ServeMux
 	config         Config
 	routes         map[string]apiServiceRoute
 	rootGroup      *apiGroupEntry
@@ -164,10 +165,6 @@ func (api *APIService) GroupHR() {
 
 // Handle -
 func (api *APIService) Handle(endpoint EndpointAPI, handler http.Handler) {
-	api.HandleWithMux(http.DefaultServeMux, endpoint, handler)
-}
-
-func (api *APIService) HandleWithMux(mux *http.ServeMux, endpoint EndpointAPI, handler http.Handler) {
 	endpoint.InitEndpoint(endpoint)
 	pattern := endpoint.URL()
 
@@ -179,17 +176,17 @@ func (api *APIService) HandleWithMux(mux *http.ServeMux, endpoint EndpointAPI, h
 
 	if api.config.MockMode == MockEnable {
 		if isHTTPHandler(handler) {
-			mux.Handle(pattern, handler)
+			api.mux.Handle(pattern, handler)
 		} else if api.config.DevMode {
-			mux.Handle(pattern, api)
+			api.mux.Handle(pattern, api)
 		}
 	}
 
 	if api.config.DevMode {
-		mux.Handle("/godraft"+pattern, api)
-		mux.Handle("/godraft:doc"+pattern, api)
-		mux.Handle("/godraft:docs"+pattern, api)
-		mux.Handle("/godraft:scheme"+pattern, api)
+		api.mux.Handle("/godraft"+pattern, api)
+		api.mux.Handle("/godraft:doc"+pattern, api)
+		api.mux.Handle("/godraft:docs"+pattern, api)
+		api.mux.Handle("/godraft:scheme"+pattern, api)
 	}
 }
 
@@ -223,8 +220,13 @@ func Create(cfg Config) *APIService {
 }
 
 func CreateWithMux(mux *http.ServeMux, cfg Config) *APIService {
+	if mux == nil {
+		mux = http.DefaultServeMux
+	}
+
 	root := createGroupEntry("G", "#root", "")
 	srv := &APIService{
+		mux:         mux,
 		config:      cfg,
 		rootGroup:   root,
 		activeGroup: root,
@@ -241,10 +243,10 @@ func CreateWithMux(mux *http.ServeMux, cfg Config) *APIService {
 
 	if cfg.DevMode && !draftHandled {
 		draftHandled = true
-		mux.Handle("/godraft:doc/", srv)
-		mux.Handle("/godraft:docs/", srv)
-		mux.Handle("/godraft:scheme/", srv)
-		mux.Handle("/godraft:request/", srv)
+		srv.mux.Handle("/godraft:doc/", srv)
+		srv.mux.Handle("/godraft:docs/", srv)
+		srv.mux.Handle("/godraft:scheme/", srv)
+		srv.mux.Handle("/godraft:request/", srv)
 	}
 
 	return srv
