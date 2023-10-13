@@ -1,6 +1,7 @@
 package reflect
 
 import (
+	"fmt"
 	"reflect"
 	"regexp"
 	"strings"
@@ -91,7 +92,37 @@ func initItem(
 		}
 
 	case reflect.Struct:
+		item.MetaType = typeRef.Name()
+
 		item.Nested = initNested(o, typeRef, valRef)
+
+	case reflect.Map:
+		elemType := typeRef.Elem().Name()
+		if elemType == "" {
+			elemType = "any"
+		}
+
+		item.MetaType = fmt.Sprintf("map[%s]%s", typeRef.Key().Name(), elemType)
+
+		ktev := reflect.Zero(typeRef.Key()).MethodByName("TypeEnumValues")
+		etev := reflect.Zero(typeRef.Elem()).MethodByName("TypeEnumValues")
+
+		if ktev.IsValid() || etev.IsValid() {
+			enums := make([]interface{}, 0, 2)
+			if !ktev.IsValid() {
+				enums = append(enums, typeRef.Key().Name())
+			} else {
+				enums = append(enums, ktev.Call([]reflect.Value{})[0].Interface())
+			}
+
+			if !etev.IsValid() {
+				enums = append(enums, elemType)
+			} else {
+				enums = append(enums, etev.Call([]reflect.Value{})[0].Interface())
+			}
+
+			item.Enum = enums
+		}
 	}
 }
 
