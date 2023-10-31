@@ -16,16 +16,17 @@ type Options struct {
 
 // Item -
 type Item struct {
-	Name       string      `json:"name"`
-	Value      interface{} `json:"-"`
-	Enum       interface{} `json:"enum"`
-	Type       string      `json:"type"`
-	MetaType   string      `json:"meta_type"`
-	Tags       string      `json:"tags"`
-	Comment    string      `json:"comment"`
-	Required   bool        `json:"required"`
-	Deprecated bool        `json:"deprecated"`
-	Nested     []Item      `json:"nested"`
+	Name          string      `json:"name"`
+	Value         interface{} `json:"-"`
+	Enum          interface{} `json:"enum"`
+	Type          string      `json:"type"`
+	MetaType      string      `json:"meta_type"`
+	Tags          string      `json:"tags"`
+	Comment       string      `json:"comment"`
+	Required      bool        `json:"required"`
+	RequiredGroup string      `json:"required_group"`
+	Deprecated    bool        `json:"deprecated"`
+	Nested        []Item      `json:"nested"`
 }
 
 // Get -
@@ -142,6 +143,7 @@ var (
 	reIsPrivate   = regexp.MustCompile(`^[a-z]`)
 	reJsonTagName = regexp.MustCompile(`^[^,]+`)
 	reOmitEmpty   = regexp.MustCompile(`^(.+,)?omitempty(,.+)?$`)
+	reRequired    = regexp.MustCompile(`^(true(,([\w]+))?)|(false)$`)
 )
 
 func initNested(o Options, typeRef reflect.Type, valRef reflect.Value) []Item {
@@ -182,6 +184,14 @@ func initNested(o Options, typeRef reflect.Type, valRef reflect.Value) []Item {
 		item.Comment = f.Tag.Get("comment")
 		item.Required = f.Tag.Get("required") == "true"
 		item.Deprecated = f.Tag.Get("deprecated") == "true"
+
+		required := f.Tag.Get("required")
+		if reRequired.MatchString(required) {
+			item.Required = strings.HasPrefix(required, "true")
+			if attrs := strings.Split(required, ","); len(attrs) > 1 {
+				item.RequiredGroup = attrs[1]
+			}
+		}
 
 		td := zfv.MethodByName("TypeDescription")
 		if td.IsValid() {
